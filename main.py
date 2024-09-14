@@ -37,27 +37,46 @@ class Network:
         self.ai = 0
 
     def train(self, state, newState, action, reward, done):
+        # Add experience to memory
         self.memory.append((state, newState, action, reward, done))
+
+        # Only train if we have enough samples
         if len(self.memory) < BATCHSIZE:
             return
 
-        sample = random.sample(self.memory, BATCHSIZE)
-        states, newStates, actions, rewards, dones = zip(*sample)
+        # Sample a batch from memory
+        batch = random.sample(self.memory, BATCHSIZE)
 
-        states = torch.tensor(np.array(states), dtype=torch.float32)
-        newStates = torch.tensor(np.array(newStates), dtype=torch.float32)
-        actions = torch.tensor(actions, dtype=torch.int64)
-        rewards = torch.tensor(rewards, dtype=torch.int64)
-        dones = torch.tensor(dones, dtype=torch.int64)
+        # Unpack the batch
+        states, newStates, actions, rewards, dones = map(np.array, zip(*batch))
 
-        qValues = self.model(states).gather(1, actions.unsqueeze(1)).squeeze()
-        nextQValues = self.targetModel(newStates).detach().max(1)[0]
-        targets = rewards + (0.99 * nextQValues * (1 - dones))
+        # Convert to tensors
+        states = torch.FloatTensor(states)
+        newStates = torch.FloatTensor(newStates)
+        actions = torch.LongTensor(actions)
+        rewards = torch.FloatTensor(rewards)
+        dones = torch.FloatTensor(dones)
 
-        loss = self.criterion(qValues, targets)
+        # Compute Q values
+        currentQValues = self.model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+        nextQValues = self.targetModel(newStates).max(1)[0].detach()
+
+        # Compute target Q values
+        targetQValues = rewards + (1 - dones) * 0.99 * nextQValues
+
+        # Compute loss
+        loss = self.criterion(currentQValues, targetQValues)
+
+        # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        # Update target network periodically
+        if self.steps % 100 == 0:
+            self.targetModel.load_state_dict(self.model.state_dict())
+
+        self.steps += 1
 
     def getAction(self, state):
         e = 0.0001 + 0.9 * np.exp(1e-6 * self.steps)
@@ -84,7 +103,6 @@ while True:
         network.random = 0
 
         ngames += 1
-        if ngames % 10 == 0:
-            network.targetModel.load_state_dict(network.model.state_dict())
+
         state, info = env.reset()
         print(f"{round(ai / (ai + rand) * 100.0)}")
