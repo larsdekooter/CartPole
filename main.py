@@ -6,11 +6,10 @@ import torch.optim as optim
 from collections import deque
 import random
 import numpy as np
-import sys
 
 
 env = gym.make("CartPole-v1", render_mode="human")
-BATCHSIZE = 10
+BATCHSIZE = 100
 
 state, _ = env.reset()
 
@@ -33,8 +32,6 @@ class Network:
         self.memory = deque(maxlen=100_000)
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
-        self.random = 0
-        self.ai = 0
 
     def train(self, state, newState, action, reward, done):
         # Add experience to memory
@@ -82,11 +79,12 @@ class Network:
         e = 0.0001 + 0.9 * np.exp(1e-6 * self.steps)
         self.steps += 1
         if np.random.random() < e:
-            self.random += 1
             return env.action_space.sample()
-        self.ai += 1
-        with torch.no_grad():
-            return self.model(torch.tensor(state, dtype=torch.float32)).argmax().item()
+        else:
+            with torch.no_grad():
+                return (
+                    self.model(torch.tensor(state, dtype=torch.float32)).argmax().item()
+                )
 
 
 ngames = 0
@@ -97,12 +95,5 @@ while True:
     network.train(state, nextState, action, 0 if terminated else reward, terminated)
 
     if truncated or terminated:
-        ai = network.ai
-        rand = network.random
-        network.ai = 0
-        network.random = 0
-
         ngames += 1
-
         state, info = env.reset()
-        print(f"{round(ai / (ai + rand) * 100.0)}")
