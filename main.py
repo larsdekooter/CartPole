@@ -81,9 +81,9 @@ class Network:
         self.steps += 1
 
     def getAction(self, state):
-        e = 0.0001 + 0.9 * np.exp(1e-6 * -self.steps)
+        self.epsilon = 0.0001 + 0.9 * np.exp(1e-6 * -self.steps)
         self.steps += 1
-        if np.random.random() < e:
+        if np.random.random() < self.epsilon:
             self.rand += 1
             return env.action_space.sample()
         else:
@@ -104,7 +104,7 @@ while True:
 
     if truncated or terminated:
         print(
-            f"Games: {ngames}, AI: {network.ai}, Random: {network.rand}, Percentage: {round(network.ai / (network.ai + network.rand) * 100.0)}, Reward: {int(network.rewardPerGame[ngames])}"
+            f"Games: {ngames}, AI: {network.ai}, Random: {network.rand}, Percentage: {round(network.ai / (network.ai + network.rand) * 100.0)}, Reward: {int(network.rewardPerGame[ngames])}, Steps: {network.steps}, Epsilon: {round(network.epsilon, 3)}"
         )
         ngames += 1
         network.ai = 0
