@@ -36,6 +36,7 @@ class Network:
         self.ai = 0
         self.rand = 0
         self.rewardPerGame = []
+        self.rewardPerGame.append(0)
 
     def train(self, state, newState, action, reward, done):
         # Add experience to memory
@@ -102,10 +103,11 @@ while True:
     network.rewardPerGame[ngames] += reward
 
     if truncated or terminated:
-        ngames += 1
         print(
-            f"Games: {ngames}, AI: {network.ai}, Random: {network.rand}, Percentage: {round(network.ai / (network.ai + network.rand) * 100.0)}, Reward: {network.rewardPerGame[ngames]}"
+            f"Games: {ngames}, AI: {network.ai}, Random: {network.rand}, Percentage: {round(network.ai / (network.ai + network.rand) * 100.0)}, Reward: {int(network.rewardPerGame[ngames])}"
         )
+        ngames += 1
         network.ai = 0
         network.rand = 0
+        network.rewardPerGame.append(0)
         state, info = env.reset()
