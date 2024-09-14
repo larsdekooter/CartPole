@@ -76,7 +76,7 @@ class Network:
         self.steps += 1
 
     def getAction(self, state):
-        e = 0.0001 + 0.9 * np.exp(1e-6 * self.steps)
+        e = 0.0001 + 0.9 * np.exp(1e-6 * -self.steps)
         self.steps += 1
         if np.random.random() < e:
             return env.action_space.sample()
