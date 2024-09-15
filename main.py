@@ -42,46 +42,32 @@ class Network:
         self.rewardPerGame.append(0)
 
     def train(self, state, newState, action, reward, done):
-        # Add experience to memory
         self.memory.append((state, newState, action, reward, done))
+        self.steps += 1
 
-        # Only train if we have enough samples
         if len(self.memory) < BATCHSIZE:
             return
 
-        # Sample a batch from memory
         batch = random.sample(self.memory, BATCHSIZE)
+        states, new_states, actions, rewards, dones = zip(*batch)
 
-        # Unpack the batch
-        states, newStates, actions, rewards, dones = map(np.array, zip(*batch))
+        states = torch.tensor(states, dtype=torch.float32)
+        new_states = torch.tensor(new_states, dtype=torch.float32)
+        actions = torch.tensor(actions, dtype=torch.long).unsqueeze(1)
+        rewards = torch.tensor(rewards, dtype=torch.float32)
+        dones = torch.tensor(dones, dtype=torch.bool)
 
-        # Convert to tensors
-        states = torch.FloatTensor(states)
-        newStates = torch.FloatTensor(newStates)
-        actions = torch.LongTensor(actions)
-        rewards = torch.FloatTensor(rewards)
-        dones = torch.FloatTensor(dones)
+        current_q_values = self.model(states).gather(1, actions)
+        next_q_values = self.targetModel(new_states).max(1)[0]
+        target_q_values = rewards + GAMMA * next_q_values * (~dones)
 
-        # Compute Q values
-        currentQValues = self.model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-        nextQValues = self.targetModel(newStates).max(1)[0].detach()
-
-        # Compute target Q values
-        targetQValues = rewards + (1 - dones) * GAMMA * nextQValues
-
-        # Compute loss
-        loss = self.criterion(currentQValues, targetQValues)
-
-        # Optimize the model
+        loss = self.criterion(current_q_values, target_q_values.unsqueeze(1))
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        # Update target network periodically
         if self.steps % 100 == 0:
             self.targetModel.load_state_dict(self.model.state_dict())
-
-        self.steps += 1
 
     def getAction(self, state):
         self.epsilon = 0.0001 + 0.9 * np.exp(1e-4 * -self.steps)
