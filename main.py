@@ -81,8 +81,7 @@ class Network:
         self.steps += 1
 
     def getAction(self, state):
-        self.epsilon = 0.0001 + 0.9 * np.exp(1e-6 * -self.steps)
-        self.steps += 1
+        self.epsilon = 0.0001 + 0.9 * np.exp(1e-4 * -self.steps)
         if np.random.random() < self.epsilon:
             self.rand += 1
             return env.action_space.sample()
@@ -101,6 +100,7 @@ while True:
     nextState, reward, terminated, truncated, info = env.step(action)
     network.train(state, nextState, action, 0 if terminated else reward, terminated)
     network.rewardPerGame[ngames] += reward
+    state = nextState
 
     if truncated or terminated:
         print(
