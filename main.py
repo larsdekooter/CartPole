@@ -13,7 +13,7 @@ env = gym.make("CartPole-v1")
 env.metadata["render_fps"] = 1000000
 BATCHSIZE = 100
 GAMMA = 0.99
-EPISODES = 1000000
+EPISODES = 463357
 
 state, _ = env.reset()
 
