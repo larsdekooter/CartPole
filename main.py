@@ -35,7 +35,9 @@ class Network:
         self.steps = 0
         self.memory = deque(maxlen=100_000)
         self.criterion = nn.MSELoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
+        self.optimizer4 = optim.Adam(self.model.parameters(), lr=1e-4)
+        self.optimizer5 = optim.Adam(self.model.parameters(), lr=1e-5)
+        self.optimizer = self.optimizer4
         self.ai = 0
         self.rand = 0
         self.rewardPerGame = []
@@ -123,3 +125,5 @@ while True:
         network.rand = 0
         network.rewardPerGame.append(0)
         state, info = env.reset()
+        if network.rewardPerGame[ngames - 1] == 500:
+            network.optimizer = network.optimizer5
