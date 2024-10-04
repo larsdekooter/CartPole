@@ -110,6 +110,7 @@ for i in tqdm(range(EPISODES)):
 env.close()
 env = gym.make("CartPole-v1", render_mode="human")
 state, info = env.reset()
+logs: list[str] = []
 while True:
     action = network.getAction(state)
     nextState, reward, terminated, truncated, info = env.step(action)
@@ -120,6 +121,9 @@ while True:
         print(
             f"Games: {ngames}, AI: {network.ai}, Random: {network.rand}, Percentage: {round(network.ai / (network.ai + network.rand) * 100.0)}, Reward: {int(network.rewardPerGame[ngames])}, Steps: {network.steps}, Epsilon: {round(network.epsilon, 3)}"
         )
+        logs.append(
+            f"Games: {ngames}, AI: {network.ai}, Random: {network.rand}, Percentage: {round(network.ai / (network.ai + network.rand) * 100.0)}, Reward: {int(network.rewardPerGame[ngames])}, Steps: {network.steps}, Epsilon: {round(network.epsilon, 3)}"
+        )
         ngames += 1
         network.ai = 0
         network.rand = 0
@@ -127,3 +131,8 @@ while True:
         state, info = env.reset()
         if network.rewardPerGame[ngames - 1] == 500:
             network.optimizer = network.optimizer5
+        if ngames % 1000 == 0:
+            file = open("logs.txt", "w")
+            for log in logs:
+                file.write(log)
+            file.close()
