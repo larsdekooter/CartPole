@@ -134,5 +134,5 @@ while True:
         if ngames % 1000 == 0:
             file = open("logs.txt", "w")
             for log in logs:
-                file.write(log)
+                file.write(f"{log}\n")
             file.close()
